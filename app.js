@@ -34,34 +34,51 @@ function getSelectionIndex(length) {
 
 //
 // Build out selections
-// NOTE: Making functions for this now so if json/csv stuff is included later I can refactor these
 //
 
-function buildOptionsTransportation() {
-    return ["Plane", "Train", "Automobile", "Boat", "Walk"];
+
+function selectDestination(destinations) {
+    return randomlySelectOption(destionations);
 }
 
-function buildOptionsDestinations() {
-    return ["Duluth", "Minneapolis", "North Shore", "Park"];
-}
-
-function buildOptionsEntertainment() {
-    return ["Shopping", "Concert", "Museum", "Relax", "Movie"];
-}
-
-function buildOptionsRestaurants() {
-    return ["American", "Italian", "Fusion", "Indian", "Asian", "Fast food", "Mexican"];
-}
-
-function buildOptionsAll(transportation, destinations, entertainment, restaurants) {
-    let options = [];
-    options["transportation"] = buildOptionsTransportation();
-    options["destination"] = buildOptionsDestinations();
-    options["entertainment"] = buildOptionsEntertainment();
-    options["restaurant"] = buildOptionsRestaurants();
-
-    return options;
-}
+let destinations = [
+    {
+        "name" : "Rochester",
+        "transportation":   ["Automobile", "Bike", "Bus", "Taxi", "Walk"],
+        "entertainment":    ["Museum", "Winery", "Art Center", "Shopping", "Hiking", "Concert", "Tours", "Park", "Theater", "Brewery", "Zoo"],
+        "restaurant":       ["Seafood", "Noodles", "Pizza", "Italian", "American", "Indian", "Mexican", "Breakfast", "BBQ", "Chinese", "Steakhouse"]
+    },
+    {
+        "name" : "Minneapolis",
+        "transportation":   ["Automobile", "Bike", "Bus", "Rail", "Taxi", "Walk"],
+        "entertainment":    ["Museum", "Winery", "Art Center", "Shopping", "Hiking", "Concert", "Tours", "Park", "Theater", "Brewery", "Zoo", "Sports", "Boating", "Aquarium", "Amusement park"],
+        "restaurant":       ["Pizza", "Italian", "Caribbean Fusion", "Somali", "Comfort", "American", "Southern", "Japanese", "Bakery", "Cuban", "Mexican", "Pho", "Nordic", "BBQ", "Soup and Sandwich"]
+    },
+    {
+        "name" : "Duluth",
+        "transportation":   ["Automobile", "Bike", "Bus", "Taxi", "Walk"],
+        "entertainment":    ["Museum", "Art Center", "Shopping", "Hiking", "Concert", "Park", "Theater", "Brewery", "Zoo", "Sports", "Boating", "Aquarium"],
+        "restaurant":       ["Pizza", "Steakhouse", "American", "BBQ", "Soup and Sandwich", "Soul", "Mexican", "Seafood", "Breakfast", "Caribbean", "Mexican"]
+    },
+    {
+        "name" : "Bemidji",
+        "transportation":   ["Automobile", "Bike", "Bus", "Taxi", "Walk"],
+        "entertainment":    ["Museum", "Art Center", "Shopping", "Hiking", "Concert", "Park", "Theater", "Brewery", "Boating"],
+        "restaurant":       ["American", "Mexican", "Breakfast", "Chinese", "Italian", "BBQ", "Bakery", "Thai", "Pizza", "Wings", "Steakhouse"]
+    },
+    {
+        "name" : "Boundary Waters Canoe Area",
+        "transportation":   ["Walk", "Kayak", "Canoe", "Swim"],
+        "entertainment":    ["Birdwatching", "Hiking", "Fishing", "Sight seeing", "Boating", "Swimming", "Camping"],
+        "restaurant":       ["Grill", "Picnic", "Forage"]
+    },
+    {
+        "name" : "Superior National Forest",
+        "transportation":   ["Automobile", "OHV", "Walk", "Hike", "Canoe", "Kayak", "Bike"],
+        "entertainment":    ["Birdwatching", "Hiking", "Fishing", "Sight seeing", "Boating", "Swimming", "Camping", "Hunting", "Snowmobiling", "Skiing"],
+        "restaurant":       ["Grill", "Picnic", "Forage"]
+    }
+]
 
 
 
@@ -70,32 +87,35 @@ function buildOptionsAll(transportation, destinations, entertainment, restaurant
 // Build and reroll trip
 //
 
-function generateTrip(options) {
+function generateTrip(destinations) {
     let trip = [];
-    trip["transportation"] = randomlySelectOption(options["transportation"]);
-    trip["destination"] = randomlySelectOption(options["destination"]);
-    trip["entertainment"] = randomlySelectOption(options["entertainment"]);
-    trip["restaurant"] = randomlySelectOption(options["restaurant"]);
+    let destination = randomlySelectOption(destinations);
+
+    trip["destination"] = destination["name"];
+    trip["transportation"] = randomlySelectOption(destination["transportation"]);
+    trip["entertainment"] = randomlySelectOption(destination["entertainment"]);
+    trip["restaurant"] = randomlySelectOption(destination["restaurant"]);
+    trip["destinationData"] = destination;
 
     return trip;
 }
 
-function rerollCategory(category, trip, options) {
+function rerollCategory(category, trip, destinations) {
     switch (category) {
         case "1":
-            trip["transportation"] = randomlySelectOption(options["transportation"]);
+            trip = rerollDestination(trip, destinations);
             break;
         case "2":
-            trip["destination"] = randomlySelectOption(options["destination"]);
+            trip["transportation"] = randomlySelectOption(trip["destinationData"]["transportation"]);
             break;
         case "3":
-            trip["entertainment"] = randomlySelectOption(options["entertainment"]);
+            trip["entertainment"] = randomlySelectOption(trip["destinationData"]["entertainment"]);
             break;
         case "4":
-            trip["restaurant"] = randomlySelectOption(options["restaurant"]);
+            trip["restaurant"] = randomlySelectOption(trip["destinationData"]["restaurant"]);
             break;
         case "5":
-            trip = generateTrip(options);
+            trip = generateTrip(destinations);
             break;
 
         default:
@@ -103,6 +123,45 @@ function rerollCategory(category, trip, options) {
     }
 
     return trip;
+}
+
+function rerollDestination(trip, destinations) {
+    // NOTE: This is getting a bit big... Might be best to swap out for subfunctions.
+
+
+    // Storing current values to keep the trip as similar as possible after new destination assingment
+    let currentTransport = trip["transportation"];
+    let currentEntertainment = trip["entertainment"]
+    let currentRestaurant = trip["restaurant"]
+
+    // Get new destination, and see if the other options are options for the new destination
+    let newDestination = randomlySelectOption(destinations);
+    let sameTransport = (-1 != newDestination["transportation"].findIndex((element) => element === currentTransport));
+    let sameEntertainment = (-1 != newDestination["entertainment"].findIndex((element) => element === currentEntertainment));
+    let sameRestaurant = (-1 != newDestination["restaurant"].findIndex((element) => element === currentRestaurant));
+
+    // Build out a new trip and match as much as possible to the old one
+    // Since destinations have different features, need to go through point by point
+    let newTrip = [];
+    newTrip["destination"] = newDestination["name"];
+    newTrip["destinationData"] = newDestination;
+    if (sameTransport) {
+        newTrip["transportation"] = trip["transportation"];
+    } else {
+        newTrip["transportation"] = randomlySelectOption(trip["destinationData"]["transportation"])
+    }
+    if (sameEntertainment) {
+        newTrip["entertainment"] = trip["entertainment"];
+    } else {
+        newTrip["entertainment"] = randomlySelectOption(trip["destinationData"]["entertainment"])
+    }
+    if (sameRestaurant) {
+        newTrip["restaurant"] = trip["restaurant"];
+    } else {
+        newTrip["restaurant"] = randomlySelectOption(trip["destinationData"]["restaurant"])
+    }
+
+    return newTrip;
 }
 
 
@@ -115,8 +174,8 @@ function rerollCategory(category, trip, options) {
 function stringifyCompletedTrip(trip) {
     // Trip: Transportation, Destination, Entertainment, Restaurant
     return `Here is your complete trip:
-    Transportation: ${trip["transportation"]}
     Destination: ${trip["destination"]}
+    Transportation: ${trip["transportation"]}
     Entertainment: ${trip["entertainment"]}
     Restaurant: ${trip["restaurant"]}`;
 }
@@ -136,8 +195,8 @@ function promptCompletedTrip(tripString) {
 
 function promptRerollCategory() {
     let userResponse = prompt(`Which category would you like to replace?
-    1. Transportation
-    2. Destination
+    1. Destination
+    2. Transportation
     3. Entertainment
     4. Restaurant
     5. All`)
@@ -163,8 +222,7 @@ function promptRerollCategory() {
 
 function main() {
     // Initialize options and trip
-    let options = buildOptionsAll();
-    let trip = generateTrip(options);
+    let trip = generateTrip(destinations);
 
     let tripApproved = false;
     let tripString;
@@ -175,7 +233,7 @@ function main() {
         let tripApproval = promptCompletedTrip(tripString);
         if (tripApproval === "y" || tripApproval === "Y") {
             let category = promptRerollCategory();
-            trip = rerollCategory(category, trip, options);
+            trip = rerollCategory(category, trip, destinations);
         }
         else if (tripApproval === "n" || tripApproval === "N") {
             tripApproved = true;
