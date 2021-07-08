@@ -91,10 +91,12 @@ function generateTrip(destinations) {
     let trip = [];
     let destination = randomlySelectOption(destinations);
 
+    // Using key value pairs to make data access cleaner during reroll of values
     trip["destination"] = destination["name"];
     trip["transportation"] = randomlySelectOption(destination["transportation"]);
     trip["entertainment"] = randomlySelectOption(destination["entertainment"]);
     trip["restaurant"] = randomlySelectOption(destination["restaurant"]);
+    // Storing all data for the selected destination to allow rerolling other aspects without changing the entire trip
     trip["destinationData"] = destination;
 
     return trip;
